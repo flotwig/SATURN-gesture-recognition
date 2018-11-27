@@ -11,8 +11,9 @@
 from ctypes import *
 from dwfconstants import *
 import matplotlib.pyplot as plt
-import math, time, sys, threading
+import math, time, sys, threading, system
 from multiprocessing import Queue, Process
+#from functions import *
 
 global wsize
 global win_num
@@ -30,20 +31,21 @@ def fft(window):
     global wsize
     file = open("windows.txt", "a+")
     file.write("Start: {}\t{}\nEnd: {}\t{}\n\n".format(win_num, window[0], win_num + wsize, window[-1]))
+    #file.write("Start: {}\nEnd: {}\n".format(win_num, win_num + wsize))
     file.close()
     win_num += int(wsize * overlap)
 
 def searchSegment(window_data):
     curr_size = window_data.qsize()
-    time.sleep(5)
+    time.sleep(3.5)
     print "search seg pre while"
     while window_data.qsize() > 0:
         try:
             fft(window_data.get())
             time.sleep(0.5)
         except KeyboardInterrupt:
-            print "caught KI in ss"
-            
+            print "caught KeyboardInterrupt in searchSegment"
+
     print "EXITTED LOOP"
     sys.exit()
 
@@ -155,7 +157,7 @@ if __name__ == '__main__':
 
             if cSamples >= end:
                 curr_win.append(rgdSamples[cSamples])
-                print "wd putting {}".format(called)
+                #print "wd putting {}".format(called)
                 called += 1
                 window_data.put(curr_win)
 
@@ -200,5 +202,6 @@ if __name__ == '__main__':
         rgpy.append(rgdSamples[i])
         i += 1
 
-    plt.plot(rgpy)
-    plt.show()
+    print "plotting"
+    #plt.plot(rgpy)
+    #plt.show()

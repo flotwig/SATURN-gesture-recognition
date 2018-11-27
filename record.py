@@ -2,7 +2,7 @@
    DWF Python Example
    Author:  Digilent, Inc.
    Modifier: Maya Viust
-   Revision: 10/17/2013
+   Revision: 11/26/2018
 
    Requires:
        Python 2.7, numpy, matplotlib
@@ -19,7 +19,7 @@ global wsize
 global win_num
 global overlap
 
-wsize = 500
+wsize = 250
 win_num = 0
 overlap = 0.5
 
@@ -35,16 +35,16 @@ def fft(window):
     file.close()
     win_num += int(wsize * overlap)
 
-def searchSegment(window_data):
+def popQueue(window_data):
     curr_size = window_data.qsize()
     time.sleep(3.5)
-    print "search seg pre while"
+    print "queue pop started"
     while window_data.qsize() > 0:
         try:
             fft(window_data.get())
             time.sleep(0.5)
         except KeyboardInterrupt:
-            print "caught KeyboardInterrupt in searchSegment"
+            print "caught KeyboardInterrupt in popQueue"
 
     print "EXITTED LOOP"
     sys.exit()
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     # DATA PROCESSING FUNCS
     # temporary def for testing
 
-    sst = Process(name='Search Segment', target=searchSegment, args=(window_data,))
+    sst = Process(name='Search Segment', target=popQueue, args=(window_data,))
     sst.start()
 
     #declare ctype variables

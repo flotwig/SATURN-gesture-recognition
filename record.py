@@ -31,7 +31,7 @@ open("windows.txt", "w").close()
 
 cur_gesture = None
 MOVING_AVERAGE_N = 20
-MOVING_AVERAGE_WEIGHTS = np.logspace(1,1.1,num=MOVING_AVERAGE_N)
+MOVING_AVERAGE_WEIGHTS = np.logspace(1, 1.6, num=MOVING_AVERAGE_N)
 STARTING_THRESHOLD = 12
 last_sums = [STARTING_THRESHOLD]*MOVING_AVERAGE_N
 
@@ -42,8 +42,7 @@ def fft(window):
     last_sums.pop(0)
     last_sums.append(fft_sum)
     wma = np.average(last_sums, weights=MOVING_AVERAGE_WEIGHTS) # weighted moving average
-    wstdev = np.var(last_sums)
-    wma += wstdev
+    wma *= 1.2
     print('Window Len:', len(window), '\tWindow Num:', win_num, '\tFFT Sum:', fft_sum, '\tWMA Thresh:', wma)
     if fft_sum > fft_threshold:
         # append to cur_gesture

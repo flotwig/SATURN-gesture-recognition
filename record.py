@@ -98,6 +98,7 @@ def buildWindow(window_data):
                 time.sleep(0.1)
         except KeyboardInterrupt:
             print("CTRL C close in buildWindow")
+            break
 
     print("EXITTED LOOP. i == {0}".format(i))
     sys.exit()

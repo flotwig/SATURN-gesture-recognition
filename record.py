@@ -11,7 +11,7 @@
 from ctypes import *
 from dwfconstants import *
 import matplotlib.pyplot as plt
-import math, time, sys, threading, system
+import math, time, sys, threading
 from multiprocessing import Queue, Process
 #from functions import *
 
@@ -203,5 +203,5 @@ if __name__ == '__main__':
         i += 1
 
     print "plotting"
-    #plt.plot(rgpy)
-    #plt.show()
+    plt.plot(rgpy)
+    plt.show()

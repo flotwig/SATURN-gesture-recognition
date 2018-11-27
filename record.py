@@ -13,22 +13,44 @@ from dwfconstants import *
 import matplotlib.pyplot as plt
 import math, time, sys, threading
 from multiprocessing import Queue, Process
-#from functions import *
+from functions import *
 
 global wsize
 global win_num
 global overlap
 
+knn = None
+
 wsize = 500
 win_num = 0
 overlap = 0.5
+fft_threshold = 12
 
 # create or clear testing file
 open("windows.txt", "w").close()
 
+cur_gesture = None
+
 def fft(window):
     global win_num
     global wsize
+    global cur_gesture
+    scaled_win = scale_vector(window, 500)
+    fft_sum = rfft_sum(scaled_win)
+    print(len(window), win_num, fft_sum)
+    if fft_sum > fft_threshold:
+        # append to cur_gesture
+        if cur_gesture is None:
+            cur_gesture = scaled_win
+        else:
+            cur_gesture = np.concatenate([cur_gesture, scaled_win[250:]])
+    elif cur_gesture is not None:
+        # classify cur_gesture and reset it
+        cur_gesture = scale_vector(cur_gesture, 500)
+        prediction = knn.predict([cur_gesture])
+        print("Gesture completed.\tLength: %d\tPredicted gesture: %s\t" % (len(cur_gesture), prediction[0]))
+        cur_gesture = None
+
     file = open("windows.txt", "a+")
     file.write("Start: {}\t{}\nEnd: {}\t{}\n\n".format(win_num, window[0], win_num + wsize, window[-1]))
     #file.write("Start: {}\nEnd: {}\n".format(win_num, win_num + wsize))
@@ -50,6 +72,12 @@ def searchSegment(window_data):
     sys.exit()
 
 if __name__ == '__main__':
+    # train model
+    mapping = get_data_mappings()
+    X, y, knn = build_knn_model(mapping)
+
+
+    # begin data acquisition
     if sys.platform.startswith("win"):
         dwf = cdll.dwf
     elif sys.platform.startswith("darwin"):

@@ -97,7 +97,7 @@ def buildWindow():
                 i += 1
             time.sleep(.002)
         except IndexError:
-            print "index error"
+            print("index error")
             time.sleep(.01)
         except KeyboardInterrupt:
             print("caught KeyboardInterrupt in buildWindow")
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     print("Preparing to read sample...")
 
     print("Generating sine wave...")
-    dwf.FDwfAnalogOutNodeEnableSet(hdwf, c_int(0), AnalogOutNodeCarrier, c_bool(True))
+    dwf.FDwfAnalogOutNodeEnableSet(hdwf, c_int(1), AnalogOutNodeCarrier, c_bool(True))
     dwf.FDwfAnalogOutNodeFunctionSet(hdwf, c_int(0), AnalogOutNodeCarrier, funcSine)
     dwf.FDwfAnalogOutNodeFrequencySet(hdwf, c_int(0), AnalogOutNodeCarrier, c_double(1))
     dwf.FDwfAnalogOutNodeAmplitudeSet(hdwf, c_int(0), AnalogOutNodeCarrier, c_double(2))

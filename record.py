@@ -89,40 +89,15 @@ def buildWindow(window_data):
     next_win = []
     i = 0
     time.sleep(2)
-    # while i < len(rgdSamples):
-    #     try:
-    #         print(rgdSamples[i])
-    #         if (rgdSamples[i] != 0):
-    #             curr_win.append(rgdSamples[i])
-    #             if i >= next_start:
-    #                 next_win.append(rgdSamples[i])
-    #             elif i == end:
-    #                 print("i = %d" % (i))
-    #                 # save copy so curr_win pointer is not used in fft but stays in this while loop
-    #                 window_data.put(curr_win)
-    #                 curr_win = next_win
-    #                 next_win = [rgdSamples[i]]
-    #                 curr_start = int(end - wsize * overlap)
-    #                 next_start = end
-    #                 end = curr_start + wsize
-    #                 fft(window_data.get())
-    #             i += 1
-    #             time.sleep(.002)
-    #         else:
-    #             time.sleep(0.01)
-    #     except IndexError:
-    #         print("index error")
-    #         time.sleep(.01)
-    #     except KeyboardInterrupt:
-    #         print("caught KeyboardInterrupt in buildWindow")
-
     while True:
-        if window_data.qsize() == 0:
-            time.sleep(0.1)
-        else:
-            fft(window_data.get())
-            time.sleep(0.1)
-
+        try:
+            if window_data.qsize() == 0:
+                time.sleep(0.1)
+            else:
+                fft(window_data.get())
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            print("CTRL C close in buildWindow")
 
     print("EXITTED LOOP. i == {0}".format(i))
     sys.exit()
@@ -243,7 +218,7 @@ if __name__ == '__main__':
                  #print "wd putting {}".format(called)
                  called += 1
                  window_data.put(curr_win)
-                 
+
             #
                  #nothing is getting copied, just reassigning pointers
             #     curr_win = next_win

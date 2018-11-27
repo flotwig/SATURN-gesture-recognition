@@ -57,18 +57,52 @@ def fft(window):
     file.close()
     win_num += int(wsize * overlap)
 
-def searchSegment(window_data):
-    curr_size = window_data.qsize()
+def buildWindow():
+    global win_num
+    global wsize
+    global overlap
+    global rgdSamples
     time.sleep(5)
-    print("search seg pre while")
-    while window_data.qsize() > 0:
-        try:
-            fft(window_data.get())
-            time.sleep(0.5)
-        except KeyboardInterrupt:
-            print("caught KeyboardInterrupt in searchSegment")
+    # curr_size = window_data.qsize()
+    # print("search seg pre while")
+    # while window_data.qsize() > 0:
+    #     try:
+    #         fft(window_data.get())
+    #         time.sleep(0.5)
+    #     except KeyboardInterrupt:
+    #         print("caught KeyboardInterrupt in searchSegment")
 
-    print("EXITTED LOOP")
+    curr_start = 0
+    end = curr_start + end
+    next_start = wsize * overlap
+    curr_win = []
+    next_win = []
+    i = 0
+
+    while i < len(rgdSamples):
+        try:
+            if (rgdSamples[i] != 0):
+                curr_win.append(rgdSamples[i])
+                if i >= next_start:
+                    next_win.append(rgdSamples[i])
+                elif i == end:
+                    # save copy so curr_win pointer is not used in fft but stays in this while loop
+                    window_data.put(curr_win)
+                    curr_win = next_win
+                    next_win = [rgdSamples[i]]
+                    curr_start = int(end - wsize * overlap)
+                    next_start = end
+                    end = curr_start + wsize
+                    fft(window_data.get())
+                i += 1
+            time.sleep(.002)
+        except IndexError:
+            print "index error"
+            time.sleep(.01)
+        except KeyboardInterrupt:
+            print("caught KeyboardInterrupt in buildWindow")
+
+    print("EXITTED LOOP. i == {0}".format(i))
     sys.exit()
 
 if __name__ == '__main__':
@@ -92,8 +126,8 @@ if __name__ == '__main__':
     # DATA PROCESSING FUNCS
     # temporary def for testing
 
-    sst = Process(name='Search Segment', target=searchSegment, args=(window_data,))
-    sst.start()
+    sst = Process(name='Bulid Window', target=buildWindow, args=())
+
 
     #declare ctype variables
     hdwf = c_int()
@@ -145,7 +179,7 @@ if __name__ == '__main__':
     #begin acquisition
     dwf.FDwfAnalogInConfigure(hdwf, c_int(0), c_int(1))
     print("   recording now")
-
+    sst.start()
     cSamples = 0
     curr_start = 0
     next_start = 250
@@ -178,24 +212,24 @@ if __name__ == '__main__':
 
             dwf.FDwfAnalogInStatusData(hdwf, c_int(1), byref(rgdSamples, sizeof(c_double)*cSamples), cAvailable) # get channel 2 data
 
-            if cSamples >= curr_start and cSamples < end:
-                if cSamples >= next_start:
-                    next_win.append(rgdSamples[cSamples])
-                curr_win.append(rgdSamples[cSamples])
-
-            if cSamples >= end:
-                curr_win.append(rgdSamples[cSamples])
-                #print "wd putting {}".format(called)
-                called += 1
-                window_data.put(curr_win)
-
-                #nothing is getting copied, just reassigning pointers
-                curr_win = next_win
-                next_win = [rgdSamples[cSamples]]
-
-                curr_start = int(end - wsize * overlap)
-                next_start = end
-                end = int(curr_start + wsize)
+            # if cSamples >= curr_start and cSamples < end:
+            #     if cSamples >= next_start:
+            #         next_win.append(rgdSamples[cSamples])
+            #     curr_win.append(rgdSamples[cSamples])
+            #
+            # if cSamples >= end:
+            #     curr_win.append(rgdSamples[cSamples])
+            #     #print "wd putting {}".format(called)
+            #     called += 1
+            #     window_data.put(curr_win)
+            #
+            #     #nothing is getting copied, just reassigning pointers
+            #     curr_win = next_win
+            #     next_win = [rgdSamples[cSamples]]
+            #
+            #     curr_start = int(end - wsize * overlap)
+            #     next_start = end
+            #     end = int(curr_start + wsize)
 
             cSamples += cAvailable.value
         except KeyboardInterrupt:

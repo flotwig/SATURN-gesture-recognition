@@ -5,6 +5,9 @@ import itertools
 import os
 from numpy.fft import fft, fftfreq, ifft, rfft
 
+def scale_vector(vector, new_length):
+    return np.interp(np.linspace(0, len(vector)-1, num=new_length), range(0, len(vector)), vector)
+
 # Returns a list of the datasets in the data directory.
 # Each dataset in this list is a dict with three attributes:
 #   Dir: directory under data/ occupied by this dataset
@@ -149,6 +152,9 @@ def find_gestures_in_new_small_pad_datasets(path_filter="small-pad-"):
         yield (datum, best_gestures)
     return
 
+def rfft_sum(values):
+    return np.sum(np.abs(rfft(values)))
+
 # returns the list of gesture events happening in dataset
 # cur_dataset: a list of readings
 def find_gestures_in_dataset(cur_dataset, sample_win_size=50000, overlap=.5, threshold=45000):
@@ -170,10 +176,7 @@ def find_gestures_in_dataset(cur_dataset, sample_win_size=50000, overlap=.5, thr
         # each window covers an event occuring in one second of time
         window_data = cur_dataset[start_win:end_win]
         
-        # getting sum of fft bins, then the sum of their frequency values
-        fft_vals = rfft(window_data)
-
-        sum_of_fftValues = sum(np.abs(fft_vals))
+        sum_of_fftValues = rfft_sum(window_data)
 
         # scale smaller slices - no idea if this is accurate
         sum_of_fftValues *= np.round(sample_win_size / (end_win - start_win))
@@ -222,9 +225,6 @@ from sklearn.neighbors import KNeighborsClassifier
 
 # print(list(find_gestures_in_new_small_pad_datasets(path_filter="small-pad-saturday")))
 
-# empiracally determined that win size of 1/2 second and threshold 12 works decently for finding gestures
-all_gestures = list(find_gestures_in_all_datasets(path_filter="small-pad-saturday", sample_win_size=250, overlap=.5, threshold=12))
-
 # build knn model
 # mapping: dict of gesture_name -> [sample gestures] mappings
 def build_knn_model(mapping):
@@ -238,8 +238,12 @@ def build_knn_model(mapping):
             y.append([gesture_name])
     return (X, y, knn.fit(X, y))
 
-mapping = {datum['File']: [load_dataset(datum, raw=False)[g[0]:g[1]] for g in gestures] for (datum, gestures) in all_gestures}
-X, y, knn = build_knn_model(mapping)
+def get_data_mappings():
+    # empiracally determined that win size of 1/2 second and threshold 12 works decently for finding gestures
+    all_gestures = list(find_gestures_in_all_datasets(path_filter="small-pad-saturday", sample_win_size=250, overlap=.5, threshold=12))
+    return {datum['File']: [load_dataset(datum, raw=False)[g[0]:g[1]] for g in gestures] for (datum, gestures) in all_gestures}
+
+
 
 # plt.rcParams["figure.figsize"] = (40,16)  # change size of charts
 # plt.rcParams["figure.max_open_warning"] = 0

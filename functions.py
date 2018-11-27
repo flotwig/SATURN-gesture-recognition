@@ -246,7 +246,7 @@ def build_knn_model(mapping):
             y.append([gesture_name])
     return (X, y, knn.fit(X, y))
 
-def get_data_mappings():
+def get_data_mappings(sample_win_size=250, threshold=12):
     # empiracally determined that win size of 1/2 second and threshold 12 works decently for finding gestures
     all_gestures = list(find_gestures_in_all_datasets(path_filter="small-pad-saturday", sample_win_size=250, overlap=.5, threshold=12))
     return {datum['File']: [load_dataset(datum, raw=False)[g[0]:g[1]] for g in gestures] for (datum, gestures) in all_gestures}
@@ -279,6 +279,25 @@ def graph_samples(rgdSamples):
     plt.plot(rgpy)
     plt.show()
 
+def test_classification(X, y, knn):
+    print("Testing classification with predictions...")
+    #print("ACTUAL\tPREDICTED\tSUCCESSFUL")
+    #print("==================================================================")
+    counts = {} # (successes, total)
+    for (i, normalized) in enumerate(X):
+        gesture_name = y[i][0]
+        prediction = knn.predict([normalized])
+        success = prediction[0] == gesture_name
+        prev_count = counts[gesture_name] if gesture_name in counts else (0,0)
+        counts[gesture_name] = np.add(prev_count, (success * 1, 1))
+        #print("%s\t%s\t%s" % (gesture_name, prediction[0], success))
+    print("Results of testing:")
+    print("GESTURE   \t# TRIALS\t# SUCCESSES\t% SUCCESSFUL")
+    print("==================================================================")
+    for (gesture_name, count) in counts.items():
+        successes, total = count
+        print("%s\t%s\t%s\t%.2f" % (gesture_name.rjust(10, " "), str(successes).rjust(8, " "), str(total).rjust(11, " "), 100*float(successes)/total))
+    print("Testing complete.")
 
 # plt.rcParams["figure.figsize"] = (40,16)  # change size of charts
 # plt.rcParams["figure.max_open_warning"] = 0

@@ -76,15 +76,15 @@ def searchSegment(window_data):
             time.sleep(0.5)
         except KeyboardInterrupt:
             print("caught KeyboardInterrupt in searchSegment")
+            break
 
-    print("EXITTED LOOP")
-    sys.exit()
+    print("EXITED LOOP")
 
 if __name__ == '__main__':
     # train model
     mapping = get_data_mappings()
     X, y, knn = build_knn_model(mapping)
-
+    test_classification(X, y, knn)
 
     # begin data acquisition
     if sys.platform.startswith("win"):

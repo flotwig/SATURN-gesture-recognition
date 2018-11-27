@@ -40,7 +40,7 @@ def fft(window):
     global win_num, wsize, cur_gesture, last_sums, wma
     scaled_win = scale_vector(window, 500)
     fft_sum = rfft_sum(scaled_win)
-    print('Window Len:', len(window), '\tWindow Num:', win_num, '\tFFT Sum:', fft_sum, '\tWMA Thresh:', wma)
+    print('Window Len: %d\tWindow Num: %d\tFFT Sum: %.2f\tWMA Thresh: %.2f' % (len(window), win_num, fft_sum, wma))
     if fft_sum > fft_threshold:
         # append to cur_gesture
         if cur_gesture is None:

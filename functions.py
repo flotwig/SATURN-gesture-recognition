@@ -294,7 +294,9 @@ def test_classification(X, y, knn):
     print("Results of testing:")
     print("GESTURE   \t# TRIALS\t# SUCCESSES\t% SUCCESSFUL")
     print("==================================================================")
-    for (gesture_name, count) in counts.items():
+    counts = list(counts.items())
+    counts.sort(key=lambda x:x[0])
+    for (gesture_name, count) in counts:
         successes, total = count
         print("%s\t%s\t%s\t%.2f" % (gesture_name.rjust(10, " "), str(successes).rjust(8, " "), str(total).rjust(11, " "), 100*float(successes)/total))
     print("Testing complete.")

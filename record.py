@@ -30,31 +30,40 @@ fft_threshold = 12
 open("windows.txt", "w").close()
 
 cur_gesture = None
+MOVING_AVERAGE_N = 20
+MOVING_AVERAGE_WEIGHTS = np.logspace(1,1.1,num=MOVING_AVERAGE_N)
+STARTING_THRESHOLD = 12
+last_sums = [STARTING_THRESHOLD]*MOVING_AVERAGE_N
 
 def fft(window):
-    global win_num
-    global wsize
-    global cur_gesture
+    global win_num, wsize, cur_gesture, last_sums
     scaled_win = scale_vector(window, 500)
     fft_sum = rfft_sum(scaled_win)
-    print(len(window), win_num, fft_sum)
+    last_sums.pop(0)
+    last_sums.append(fft_sum)
+    wma = np.average(last_sums, weights=MOVING_AVERAGE_WEIGHTS) # weighted moving average
+    wstdev = np.var(last_sums)
+    wma += wstdev
+    print('Window Len:', len(window), '\tWindow Num:', win_num, '\tFFT Sum:', fft_sum, '\tWMA Thresh:', wma)
     if fft_sum > fft_threshold:
         # append to cur_gesture
         if cur_gesture is None:
             cur_gesture = scaled_win
         else:
             cur_gesture = np.concatenate([cur_gesture, scaled_win[250:]])
+            print(len(cur_gesture))
     elif cur_gesture is not None:
-        # classify cur_gesture and reset it
-        cur_gesture = scale_vector(cur_gesture, 500)
-        prediction = knn.predict([cur_gesture])
+        # refine gesture endpoints, scale it to 500 length, and make a prediction!
+        cur_gesture = refine_gesture(cur_gesture)
+        scaled_gesture = scale_vector(cur_gesture, 500)
+        prediction = knn.predict([scaled_gesture])
         print("Gesture completed.\tLength: %d\tPredicted gesture: %s\t" % (len(cur_gesture), prediction[0]))
-        cur_gesture = None
+        cur_gesture = None  # reset for next gesture capture
 
-    file = open("windows.txt", "a+")
-    file.write("Start: {}\t{}\nEnd: {}\t{}\n\n".format(win_num, window[0], win_num + wsize, window[-1]))
+    #file = open("windows.txt", "a+")
+    #file.write("Start: {}\t{}\nEnd: {}\t{}\n\n".format(win_num, window[0], win_num + wsize, window[-1]))
     #file.write("Start: {}\nEnd: {}\n".format(win_num, win_num + wsize))
-    file.close()
+    #file.close()
     win_num += int(wsize * overlap)
 
 def searchSegment(window_data):
@@ -208,28 +217,5 @@ if __name__ == '__main__':
     if fCorrupted:
         print("Samples could be corrupted! Reduce frequency")
 
-    f = open("record.csv", "w")
-
-    print("writing data to csv file")
-    zero_count = 0
-    i = 0
-    while zero_count < 3:
-        if rgdSamples[i] == 0.0:
-            zero_count += 1
-        f.write("%s\n" % rgdSamples[i])
-        i += 1
-    f.close()
-
-    print("writing data to list to be graphed")
-    rgpy= []
-    zero_count = 0
-    i = 0
-    while zero_count < 3:
-        if rgdSamples[i] == 0.0:
-            zero_count += 1
-        rgpy.append(rgdSamples[i])
-        i += 1
-
-    print("plotting")
-    plt.plot(rgpy)
-    plt.show()
+    #write_samples_to_csv(rgdSamples)
+    #graph_samples(rgdSamples)

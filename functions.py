@@ -4,6 +4,7 @@ import pandas as pd
 import itertools
 import os
 from numpy.fft import fft, fftfreq, ifft, rfft
+from sklearn.neighbors import KNeighborsClassifier
 
 def scale_vector(vector, new_length):
     return np.interp(np.linspace(0, len(vector)-1, num=new_length), range(0, len(vector)), vector)
@@ -204,14 +205,7 @@ def find_gestures_in_dataset(cur_dataset, sample_win_size=50000, overlap=.5, thr
            
     # refine start and end points of gesture
     for (i, gesture) in enumerate(gestures):
-        squared_gesture = np.power(cur_dataset[gesture[0]:gesture[1]], 2)
-        percentile = np.percentile(squared_gesture, 60)
-        start = 0
-        while squared_gesture[start] > percentile:
-            start += 1
-        end = len(squared_gesture) - 1
-        while squared_gesture[end] < percentile:
-            end -= 1
+        start, end = refine_gesture_endpoints(cur_dataset[gesture[0]:gesture[1]])
         gestures[i] = (gesture[0] + start, gesture[0] + end)
         
     
@@ -221,7 +215,21 @@ def find_gestures_in_dataset(cur_dataset, sample_win_size=50000, overlap=.5, thr
     
     return gestures
 
-from sklearn.neighbors import KNeighborsClassifier
+def refine_gesture_endpoints(gesture):
+    squared_gesture = np.power(gesture, 2)
+    percentile = np.percentile(squared_gesture, 60)
+    start = 0
+    while squared_gesture[start] > percentile:
+        start += 1
+    end = len(squared_gesture) - 1
+    while squared_gesture[end] < percentile:
+        end -= 1
+    return start, end
+
+def refine_gesture(gesture):
+    start, end = refine_gesture_endpoints(gesture)
+    return gesture[start:end]
+
 
 # print(list(find_gestures_in_new_small_pad_datasets(path_filter="small-pad-saturday")))
 
@@ -243,6 +251,33 @@ def get_data_mappings():
     all_gestures = list(find_gestures_in_all_datasets(path_filter="small-pad-saturday", sample_win_size=250, overlap=.5, threshold=12))
     return {datum['File']: [load_dataset(datum, raw=False)[g[0]:g[1]] for g in gestures] for (datum, gestures) in all_gestures}
 
+def write_samples_to_csv(rgdSamples):
+    f = open("record.csv", "w")
+
+    print("writing data to csv file")
+    zero_count = 0
+    i = 0
+    while zero_count < 3:
+        if rgdSamples[i] == 0.0:
+            zero_count += 1
+        f.write("%s\n" % rgdSamples[i])
+        i += 1
+    f.close()
+
+def graph_samples(rgdSamples):
+    print("writing data to list to be graphed")
+    rgpy= []
+    zero_count = 0
+    i = 0
+    while zero_count < 3:
+        if rgdSamples[i] == 0.0:
+            zero_count += 1
+        rgpy.append(rgdSamples[i])
+        i += 1
+
+    print("plotting")
+    plt.plot(rgpy)
+    plt.show()
 
 
 # plt.rcParams["figure.figsize"] = (40,16)  # change size of charts

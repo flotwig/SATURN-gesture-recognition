@@ -34,15 +34,12 @@ MOVING_AVERAGE_N = 20
 MOVING_AVERAGE_WEIGHTS = np.logspace(1, 1.6, num=MOVING_AVERAGE_N)
 STARTING_THRESHOLD = 12
 last_sums = [STARTING_THRESHOLD]*MOVING_AVERAGE_N
+wma = STARTING_THRESHOLD
 
 def fft(window):
-    global win_num, wsize, cur_gesture, last_sums
+    global win_num, wsize, cur_gesture, last_sums, wma
     scaled_win = scale_vector(window, 500)
     fft_sum = rfft_sum(scaled_win)
-    last_sums.pop(0)
-    last_sums.append(fft_sum)
-    wma = np.average(last_sums, weights=MOVING_AVERAGE_WEIGHTS) # weighted moving average
-    wma *= 1.2
     print('Window Len:', len(window), '\tWindow Num:', win_num, '\tFFT Sum:', fft_sum, '\tWMA Thresh:', wma)
     if fft_sum > fft_threshold:
         # append to cur_gesture
@@ -51,13 +48,19 @@ def fft(window):
         else:
             cur_gesture = np.concatenate([cur_gesture, scaled_win[250:]])
             print(len(cur_gesture))
-    elif cur_gesture is not None:
-        # refine gesture endpoints, scale it to 500 length, and make a prediction!
-        cur_gesture = refine_gesture(cur_gesture)
-        scaled_gesture = scale_vector(cur_gesture, 500)
-        prediction = knn.predict([scaled_gesture])
-        print("Gesture completed.\tLength: %d\tPredicted gesture: %s\t" % (len(cur_gesture), prediction[0]))
-        cur_gesture = None  # reset for next gesture capture
+    else:
+        if cur_gesture is not None:
+            # refine gesture endpoints, scale it to 500 length, and make a prediction!
+            cur_gesture = refine_gesture(cur_gesture)
+            scaled_gesture = scale_vector(cur_gesture, 500)
+            prediction = knn.predict([scaled_gesture])
+            print("Gesture completed.\tLength: %d\tPredicted gesture: %s\t" % (len(cur_gesture), prediction[0]))
+            cur_gesture = None  # reset for next gesture capture
+        # calculate WMA
+        last_sums.pop(0)
+        last_sums.append(fft_sum)
+        wma = np.average(last_sums, weights=MOVING_AVERAGE_WEIGHTS) # weighted moving average
+        wma *= 1.2
 
     #file = open("windows.txt", "a+")
     #file.write("Start: {}\t{}\nEnd: {}\t{}\n\n".format(win_num, window[0], win_num + wsize, window[-1]))

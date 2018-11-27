@@ -37,16 +37,16 @@ def fft(window):
 
 def searchSegment(window_data):
     curr_size = window_data.qsize()
-    time.sleep(3.5)
-    print "search seg pre while"
+    time.sleep(5)
+    print("search seg pre while")
     while window_data.qsize() > 0:
         try:
             fft(window_data.get())
             time.sleep(0.5)
         except KeyboardInterrupt:
-            print "caught KeyboardInterrupt in searchSegment"
+            print("caught KeyboardInterrupt in searchSegment")
 
-    print "EXITTED LOOP"
+    print("EXITTED LOOP")
     sys.exit()
 
 if __name__ == '__main__':
@@ -82,22 +82,22 @@ if __name__ == '__main__':
     #print DWF version
     version = create_string_buffer(16)
     dwf.FDwfGetVersion(version)
-    print "DWF Version: "+version.value
+    print("DWF Version: "+str(version.value))
 
     #open device
-    print "Opening first device"
+    print("Opening first device")
     dwf.FDwfDeviceOpen(c_int(-1), byref(hdwf))
 
     if hdwf.value == hdwfNone.value:
         szerr = create_string_buffer(512)
         dwf.FDwfGetLastErrorMsg(szerr)
-        print szerr.value
-        print "failed to open device"
+        print(szerr.value)
+        print("failed to open device")
         quit()
 
-    print "Preparing to read sample..."
+    print("Preparing to read sample...")
 
-    print "Generating sine wave..."
+    print("Generating sine wave...")
     dwf.FDwfAnalogOutNodeEnableSet(hdwf, c_int(0), AnalogOutNodeCarrier, c_bool(True))
     dwf.FDwfAnalogOutNodeFunctionSet(hdwf, c_int(0), AnalogOutNodeCarrier, funcSine)
     dwf.FDwfAnalogOutNodeFrequencySet(hdwf, c_int(0), AnalogOutNodeCarrier, c_double(1))
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     #begin acquisition
     dwf.FDwfAnalogInConfigure(hdwf, c_int(0), c_int(1))
-    print "   recording now"
+    print("   recording now")
 
     cSamples = 0
     curr_start = 0
@@ -174,15 +174,15 @@ if __name__ == '__main__':
             break
 
 
-    print "Recording finished"
+    print("Recording finished")
     if fLost:
-        print "Samples were lost! Reduce frequency"
+        print("Samples were lost! Reduce frequency")
     if fCorrupted:
-        print "Samples could be corrupted! Reduce frequency"
+        print("Samples could be corrupted! Reduce frequency")
 
     f = open("record.csv", "w")
 
-    print "writing data to csv file"
+    print("writing data to csv file")
     zero_count = 0
     i = 0
     while zero_count < 3:
@@ -192,7 +192,7 @@ if __name__ == '__main__':
         i += 1
     f.close()
 
-    print "writing data to list to be graphed"
+    print("writing data to list to be graphed")
     rgpy= []
     zero_count = 0
     i = 0
@@ -202,6 +202,6 @@ if __name__ == '__main__':
         rgpy.append(rgdSamples[i])
         i += 1
 
-    print "plotting"
+    print("plotting")
     plt.plot(rgpy)
     plt.show()

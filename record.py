@@ -105,9 +105,10 @@ if __name__ == '__main__':
     sst.start()
 
     #declare ctype variables
+    idxChannel = c_int(1) # analog channel 2
     hdwf = c_int()
     sts = c_byte()
-    hzAcq = c_double(500)
+    hzAcq = c_double(500.0)
     nSamples = 200000
     rgdSamples = (c_double*nSamples)()
     cAvailable = c_int()
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     #print DWF version
     version = create_string_buffer(16)
     dwf.FDwfGetVersion(version)
-    print("DWF Version: "+str(version.value))
+    print("DWF Version: %s" % (version.value))
 
     #open device
     print("Opening first device")
@@ -134,22 +135,22 @@ if __name__ == '__main__':
 
     print("Preparing to read sample...")
 
-    print("Generating sine wave...")
-    dwf.FDwfAnalogOutNodeEnableSet(hdwf, c_int(0), AnalogOutNodeCarrier, c_bool(True))
-    dwf.FDwfAnalogOutNodeFunctionSet(hdwf, c_int(0), AnalogOutNodeCarrier, funcSine)
-    dwf.FDwfAnalogOutNodeFrequencySet(hdwf, c_int(0), AnalogOutNodeCarrier, c_double(1))
-    dwf.FDwfAnalogOutNodeAmplitudeSet(hdwf, c_int(0), AnalogOutNodeCarrier, c_double(2))
-    dwf.FDwfAnalogOutConfigure(hdwf, c_int(0), c_bool(True))
-
     #set up acquisition
-    dwf.FDwfAnalogInChannelEnableSet(hdwf, c_int(0), c_bool(True))
-    dwf.FDwfAnalogInChannelRangeSet(hdwf, c_int(0), c_double(5))
+    dwf.FDwfAnalogInChannelEnableSet(hdwf, idxChannel, c_bool(True))
+    dwf.FDwfAnalogInChannelRangeSet(hdwf, idxChannel, c_double(5))
     dwf.FDwfAnalogInAcquisitionModeSet(hdwf, acqmodeRecord)
     dwf.FDwfAnalogInFrequencySet(hdwf, hzAcq)
     dwf.FDwfAnalogInRecordLengthSet(hdwf, c_double(nSamples/hzAcq.value)) # -1 infinite record length
 
     #wait at least 2 seconds for the offset to stabilize
     time.sleep(2)
+
+    phzAcq = c_double()
+    pnMin = c_int()
+    pnMax = c_int()
+    dwf.FDwfAnalogInFrequencyGet(hdwf, byref(phzAcq))
+    dwf.FDwfAnalogInBufferSizeInfo(hdwf, byref(pnMin), byref(pnMax))
+    print("Configured Hz: %.2f" % (phzAcq.value), "Buffer size: Min %d, Max %d" % (pnMin.value, pnMax.value))
 
     #begin acquisition
     dwf.FDwfAnalogInConfigure(hdwf, c_int(0), c_int(1))
@@ -185,7 +186,7 @@ if __name__ == '__main__':
             if cSamples+cAvailable.value > nSamples :
                 cAvailable = c_int(nSamples-cSamples)
 
-            dwf.FDwfAnalogInStatusData(hdwf, c_int(1), byref(rgdSamples, sizeof(c_double)*cSamples), cAvailable) # get channel 2 data
+            dwf.FDwfAnalogInStatusData(hdwf, idxChannel, byref(rgdSamples, sizeof(c_double)*cSamples), cAvailable) # get channel 2 data
 
             if cSamples >= curr_start and cSamples < end:
                 if cSamples >= next_start:

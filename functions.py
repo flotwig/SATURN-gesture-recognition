@@ -217,7 +217,7 @@ def find_gestures_in_dataset(cur_dataset, sample_win_size=50000, overlap=.5, thr
 
 def refine_gesture_endpoints(gesture):
     squared_gesture = np.power(gesture, 2)
-    percentile = np.percentile(squared_gesture, 60)
+    percentile = np.percentile(squared_gesture, 80)
     start = 0
     while squared_gesture[start] > percentile:
         start += 1
@@ -246,9 +246,9 @@ def build_knn_model(mapping):
             y.append([gesture_name])
     return (X, y, knn.fit(X, y))
 
-def get_data_mappings(sample_win_size=250, threshold=12):
+def get_data_mappings(path_filter="small-pad-saturday/swipe", sample_win_size=250, threshold=10):
     # empiracally determined that win size of 1/2 second and threshold 12 works decently for finding gestures
-    all_gestures = list(find_gestures_in_all_datasets(path_filter="small-pad-saturday", sample_win_size=250, overlap=.5, threshold=12))
+    all_gestures = list(find_gestures_in_all_datasets(path_filter=path_filter, sample_win_size=sample_win_size, overlap=.5, threshold=threshold))
     return {datum['File']: [load_dataset(datum, raw=False)[g[0]:g[1]] for g in gestures] for (datum, gestures) in all_gestures}
 
 def write_samples_to_csv(rgdSamples):
@@ -291,15 +291,13 @@ def test_classification(X, y, knn):
         prev_count = counts[gesture_name] if gesture_name in counts else (0,0)
         counts[gesture_name] = np.add(prev_count, (success * 1, 1))
         #print("%s\t%s\t%s" % (gesture_name, prediction[0], success))
-    print("Results of testing:")
     print("GESTURE   \t# TRIALS\t# SUCCESSES\t% SUCCESSFUL")
     print("==================================================================")
     counts = list(counts.items())
     counts.sort(key=lambda x:x[0])
     for (gesture_name, count) in counts:
         successes, total = count
-        print("%s\t%s\t%s\t%.2f" % (gesture_name.rjust(10, " "), str(successes).rjust(8, " "), str(total).rjust(11, " "), 100*float(successes)/total))
-    print("Testing complete.")
+        print("%s\t%s\t%s\t%.2f" % (gesture_name.rjust(10, " "), str(total).rjust(8, " "), str(successes).rjust(11, " "), 100*float(successes)/total))
 
 # plt.rcParams["figure.figsize"] = (40,16)  # change size of charts
 # plt.rcParams["figure.max_open_warning"] = 0

@@ -38,7 +38,8 @@ wma = STARTING_THRESHOLD
 
 def fft(window):
     global win_num, wsize, cur_gesture, last_sums, wma
-    scaled_win = scale_vector(window, 500)
+    #scaled_win = scale_vector(window, 500)
+    scaled_win = window
     fft_sum = rfft_sum(scaled_win)
     print('Window Len: %d\tWindow Num: %d\tFFT Sum: %.2f\tWMA Thresh: %.2f' % (len(window), win_num, fft_sum, wma))
     if fft_sum > fft_threshold:
@@ -47,14 +48,23 @@ def fft(window):
             cur_gesture = scaled_win
         else:
             cur_gesture = np.concatenate([cur_gesture, scaled_win[250:]])
-            print(len(cur_gesture))
+            #print(len(cur_gesture))
     else:
         if cur_gesture is not None:
             # refine gesture endpoints, scale it to 500 length, and make a prediction!
+            orig_len = len(cur_gesture)
+            is_tap = (orig_len <= 1000)
             cur_gesture = refine_gesture(cur_gesture)
             scaled_gesture = scale_vector(cur_gesture, 500)
-            prediction = knn.predict([scaled_gesture])
-            print("Gesture completed.\tLength: %d\tPredicted gesture: %s\t" % (len(cur_gesture), prediction[0]))
+            classifier = knn
+            print(" [!!!] Gesture completed.")
+            if not is_tap:
+                print(" [!!!] SWIPE-type gesture detected.")
+            else:
+                classifier = tap_knn
+                print(" [!!!] TAP-type gesture detected.")
+            prediction = classifier.predict([scaled_gesture])
+            print(" [!!!] Length: %d\tPredicted gesture classification from KNN: %s\t" % (len(cur_gesture), prediction[0]))
             cur_gesture = None  # reset for next gesture capture
         # calculate WMA
         last_sums.pop(0)
@@ -107,9 +117,23 @@ def buildWindow(window_data):
 
 if __name__ == '__main__':
     # train model
-    mapping = get_data_mappings()
+    mapping = get_data_mappings(path_filter="small-pad-saturday/swipe")
     X, y, knn = build_knn_model(mapping)
+    os.system("clear")
+    print("SWIPES")
+    print("==================================================================")
     test_classification(X, y, knn)
+
+    mapping_tap = get_data_mappings(path_filter="small-pad-saturday/tap")
+    X_, y_, tap_knn = build_knn_model(mapping_tap)
+    
+    print("==================================================================")
+    print("TAPS")
+    print("==================================================================")
+    test_classification(X_, y_, tap_knn)
+
+    print("==================================================================")
+    input("Press Enter to continue.")
 
     # begin data acquisition
     if sys.platform.startswith("win"):
